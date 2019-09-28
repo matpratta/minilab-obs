@@ -10,8 +10,6 @@ const midiInputs = midi.getInputs()
 // Selecionar nossa controladora
 let minilabInput = midiInputs.filter(input => ~input.indexOf('Arturia MiniLab mkII')).shift()
 
-let i = 0
-
 // A controladora foi encontrada?
 if (!minilabInput) {
   // Não, então retornamos erro
@@ -23,6 +21,11 @@ if (!minilabInput) {
 
   // Biblioteca de render
   const render = require('./leds').init(minilabOut)
+
+  // Interface
+  const ui = {
+    currentSceneIndex: 0
+  }
   
   // Lista de cenas
   let cenas = []
@@ -38,6 +41,8 @@ if (!minilabInput) {
   .then(data => {
     // Criamos a lista de cenas
     cenas = data.scenes.map(scene => scene.name)
+
+    minilab.on('sysex', console.info)
 
     minilab.on('noteon', msg => {
       // Tipo de evento
@@ -63,9 +68,19 @@ if (!minilabInput) {
 
   // Quando mudar de cena
   obs.on('SwitchScenes', data => {
+    // Buscamos o index da cena
     let cenaId = cenas.indexOf(data.sceneName)
 
-    render.clear()
-    render.color(cenaId, 'magenta')
+    // Trocamos a cena atual
+    ui.currentSceneIndex = cenaId
   })
+
+  // Atualiza interface
+  setInterval(() => {
+    // Limpamos a exibição
+    render.clear()
+
+    // Exibimos a cena atual
+    render.color(ui.currentSceneIndex, 'magenta')
+  }, 500)
 }
